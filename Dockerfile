@@ -1,11 +1,13 @@
 FROM alpine:3.4
 
-RUN apk --update add nginx php5-fpm && \
+RUN apk --update add nginx php5-fpm php5-cli && \
     mkdir -p /var/log/nginx && \
     touch /var/log/nginx/access.log && \
     mkdir -p /run/nginx
 
 ADD www /www
+RUN php /www/index.php > /dev/null
+
 ADD nginx.conf /etc/nginx/
 ADD php-fpm.conf /etc/php5/php-fpm.conf
 
