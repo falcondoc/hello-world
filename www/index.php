@@ -1,54 +1,96 @@
-<html>
+<?php
+
+function hello_world(){
+    return "Hello ".(isset($_ENV["NAME"])?$_ENV["NAME"]:"world")." from K8S!";
+}
+
+function table_contents(){
+    $rows = [];
+    $values = array(
+        "HOSTNAME" => "Host Name",
+        "MY_POD_NAME" => "Pod Name",
+        "MY_POD_NAMESPACE" => "Namespace",
+        "MY_POD_IP" => "Pod IP",
+    );
+
+    // values
+    foreach($values as $key => $value) {
+        if (! isset($_ENV[$key])) break;
+        $rows[] =[
+            $value,
+            $_ENV[$key]
+        ];
+    }
+
+    // services
+    foreach($_ENV as $key => $value) {
+        if(preg_match("/^(.*)_PORT_([0-9]*)_(TCP|UDP)$/", $key, $matches)) {
+            $service = [
+                "name" => $matches[1],
+                "port" => $matches[2],
+                "proto" => $matches[3],
+                "value" => $value
+            ];
+            $rows[] =[
+                "Service ".$service["name"].":".$service["port"],
+                $service["value"],
+            ];
+        }
+    }
+    return $rows;
+}
+
+
+if (isset($_SERVER['HTTP_USER_AGENT']) && preg_match("/(curl|wget)/i", $_SERVER['HTTP_USER_AGENT'])) {
+    echo hello_world()."\n";
+    $tc = table_contents();
+    $max = 0;
+    foreach($tc as $row) {
+        if (strlen($row[0]) > $max) $max = strlen($row[0]);
+    }
+    foreach($tc as $row) {
+        printf("  %-".($max+3)."s %s\n", $row[0], $row[1]);
+    }
+}
+else {
+?><html>
 <head>
-	<title>Hello world!</title>
-	<link href='//fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
-	<style>
-	body {
-		background-color: white;
-		text-align: center;
-		padding: 50px;
-		font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
-	}
+<title><?php echo hello_world(); ?></title>
+    <link href="//fonts.googleapis.com/css?family=Montserrat" rel="stylesheet" type="text/css">
+    <style>
+    body {
+        background-color: #303030;
+        color: white;
+        background-image: url(texture.png);
+        text-align: center;
+        padding: 10px;
+        font-family: "Montserrat",Helvetica,Arial,sans-serif;
+    }
 
-	#logo {
-		margin-bottom: 40px;
-	}
-	</style>
+    #content {
+        width: 400px;
+        margin: 0 auto;
+    }
+
+    .logo {
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+    </style>
 </head>
-<body>
-	<img id="logo" src="logo.png" />
-	<h1><?php echo "Hello ".($_ENV["NAME"]?$_ENV["NAME"]:"world")."!"; ?></h1>
-	<?php if($_ENV["HOSTNAME"]) {?><h3>My hostname is <?php echo $_ENV["HOSTNAME"]; ?></h3><?php } ?>
-	<?php
-	$links = [];
-	foreach($_ENV as $key => $value) {
-		if(preg_match("/^(.*)_PORT_([0-9]*)_(TCP|UDP)$/", $key, $matches)) {
-			$links[] = [
-				"name" => $matches[1],
-				"port" => $matches[2],
-				"proto" => $matches[3],
-				"value" => $value
-			];
-		}
-	}
-	if($links) {
-	?>
-		<h3>Links found</h3>
-		<?php
-		foreach($links as $link) {
-			?>
-			<b><?php echo $link["name"]; ?></b> listening in <?php echo $link["port"]+"/"+$link["proto"]; ?> available at <?php echo $link["value"]; ?><br />
-			<?php
-		}
-		?>
-	<?php
-	}
-
-	if($_ENV["DOCKERCLOUD_AUTH"]) {
-		?>
-		<h3>I have Docker Cloud API powers!</h3>
-		<?php
-	}
-	?>
-</body>
+<body><div id="content">
+    <h1><?php echo hello_world(); ?></h1>
+    <table style="width:100%">
+<?php
+    foreach(table_contents() as $row) {
+        echo "      <tr><td>".$row[0]."</td><td>".$row[1]."</td></tr>\n";
+    }
+?>
+    </table>
+    <a href="http://www.kubernetes.io"><img class="logo" src="kubernetes.png" /></a>
+    <a href="https://www.jetstack.io"><img class="logo" src="jetstack.png" /></a>
+</div></body>
 </html>
+<?php
+}
+?>
