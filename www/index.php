@@ -1,7 +1,7 @@
 <?php
 
 function hello_world(){
-    return "Hello ".(isset($_ENV["NAME"])?$_ENV["NAME"]:"world")." from K8S!";
+    return "Hello ".(isset($_ENV["NAME"])?$_ENV["NAME"]:"world")." from KUBERNETES";
 }
 
 function table_contents(){
